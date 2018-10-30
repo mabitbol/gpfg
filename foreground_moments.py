@@ -40,3 +40,36 @@ def eval_mbb(nu, amp_0=1.36e6, beta_0=1.53, temp_0=21.):
     expr = expr.subs([(amp, amp_0), (beta, beta_0), (temp, temp_0)])
     eval_expr = sym.lambdify(x, expr, "numpy")
     return eval_expr(nu)
+
+
+## these work down here
+def eval_power_law_expansion(nmoments):
+    x, moments, specfncs = power_law_expansion(nmoments)
+    expansion = sym.Matrix(moments).dot(sym.Matrix(specfncs))
+    w_1 = sym.Symbol('w_1')
+    expansion = expansion.subs(w_1, 0)
+    
+    params = list(expansion.free_symbols)
+    params.remove(x)
+    params = [x] + params
+    print(params)
+    print(sym.simplify(expansion))
+    return sym.lambdify(params, expansion, "numpy")
+
+
+def power_law_expansion(nmoments=0):
+    x, [amp, beta], expr = sym_power_law()
+    specfncs = [expr/amp]
+    for k in range(nmoments):
+        specfncs.append(specfncs[k].diff(beta)) 
+    #specfncs = list(set(specfncs))
+    moments = sym.symarray('w', len(specfncs))
+    return x, moments, specfncs
+
+
+def sym_power_law():
+    x_0 = 100.e9
+    x, amp, beta = sym.symbols('x amp beta')
+    expr = amp * sym.power.Pow(x/x_0, beta)
+    params = [amp, beta]
+    return x, [amp, beta], expr
