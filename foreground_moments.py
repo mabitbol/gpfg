@@ -22,7 +22,7 @@ def moment_derivatives(args, expr_list, order):
     
     if order:
         diff_list = [expr.diff(arg) for expr in expr_list for arg in args]
-        expr_list = moment_derivatives(args, diff_list, order-1)
+        return moment_derivatives(args, diff_list, order-1)
     return list(set(expr_list))
 
 ###########################################################################
