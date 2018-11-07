@@ -1,13 +1,32 @@
-import numpy as np
 import sympy as sym
 
 hplanck = 6.626068e-34  # MKS
 kboltz = 1.3806503e-23  # MKS
 
 def sym_power_law():
-    amp, beta, x, x_0 = sym.symbols('amp beta x x_0')
+    x_0 = 100.e9
+    x, amp, beta = sym.symbols('x amp beta')
     expr = amp * sym.power.Pow(x/x_0, beta)
-    return [amp, beta, x, x_0], expr
+    params = [amp, beta]
+    return x, [amp, beta], expr
+
+def sym_mbb():
+    x, amp, beta, temp = sym.symbols('x amp beta temp')
+    X = hplanck * x / (kboltz * temp)
+    expr = amp * sym.power.Pow(X, beta) * X**3 / (sym.exp(X) - 1. )
+    return x, [amp, beta, temp], expr
+
+def moment_derivatives(args, expr_list, order):
+    if not isinstance(expr_list, list):
+        expr_list = [expr_list]
+    
+    if order:
+        diff_list = [expr.diff(arg) for expr in expr_list for arg in args]
+        expr_list = moment_derivatives(args, diff_list, order-1)
+    return list(set(expr_list))
+
+###########################################################################
+
 
 def power_law_expansion(nmoments=0):
     [amp, beta, x, x_0], expr = sym_power_law()
@@ -26,14 +45,6 @@ def eval_power_law(nu, amp_0=288., beta_0=-0.82, nu_0=100.e9):
     expr = expr.subs([(amp, amp_0), (beta, beta_0), (x_0, nu_0)])
     eval_expr = sym.lambdify(x, expr, "numpy")
     return eval_expr(nu)
-
-
-def sym_mbb(nmoments=0):
-    amp, beta, temp, x, X = sym.symbols('amp beta temp x X')
-    X = hplanck * x / (kboltz * temp)
-    expr = amp * sym.power.Pow(X, beta) * X**3 / (sym.exp(X) - 1. )
-    return [amp, beta, temp, x], expr
-
 
 def eval_mbb(nu, amp_0=1.36e6, beta_0=1.53, temp_0=21.):
     [amp, beta, temp, x], expr = sym_mbb()
@@ -66,10 +77,3 @@ def power_law_expansion(nmoments=0):
     moments = sym.symarray('w', len(specfncs))
     return x, moments, specfncs
 
-
-def sym_power_law():
-    x_0 = 100.e9
-    x, amp, beta = sym.symbols('x amp beta')
-    expr = amp * sym.power.Pow(x/x_0, beta)
-    params = [amp, beta]
-    return x, [amp, beta], expr
