@@ -10,10 +10,10 @@ def sym_power_law():
 def sym_mbb():
     hplanck = 6.626068e-34
     kboltz = 1.3806503e-23
-    x, amp, beta, temp = sym.symbols('x amp beta temp')
-    X = hplanck * x / (kboltz * temp)
+    x, amp, beta, invtemp = sym.symbols('x amp beta invtemp')
+    X = hplanck * x * invtemp / kboltz
     expr = amp * sym.power.Pow(X, beta) * X**3 / (sym.exp(X) - 1. )
-    return x, [amp, beta, temp], expr
+    return x, [amp, beta, invtemp], expr
 
 def moment_derivatives(args, expr_list, order):
     if order:
