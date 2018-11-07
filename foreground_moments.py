@@ -17,13 +17,36 @@ def sym_mbb():
     return x, [amp, beta, temp], expr
 
 def moment_derivatives(args, expr_list, order):
-    if not isinstance(expr_list, list):
-        expr_list = [expr_list]
-    
     if order:
         diff_list = [expr.diff(arg) for expr in expr_list for arg in args]
         return moment_derivatives(args, diff_list, order-1)
-    return list(set(expr_list))
+    return expr_list
+
+def clean_derivatives(expr_list):
+    expr_list = list(set(expr_list))
+    while 0 in expr_list: expr_list.remove(0)
+    return expr_list
+
+def calculate_moment_expansion(args, expr, order, delete_first_moment=False):
+    expansion = expr
+    
+    index_start = 1
+    if delete_first_moment:
+        index_start = 2
+    moment_indices = range(index_start, order+1)
+
+    spectral_functions = []
+    for k in moment_indices:
+        deriv_list = moment_derivatives(args, [expr], k)
+        spectral_functions += clean_derivatives(deriv_list)
+        
+    if spectral_functions:
+        moments = sym.symarray('w', len(spectral_functions))
+        expansion = sym.Matrix(moments).dot(sym.Matrix(spectral_functions))
+    else:
+        moments = []
+    return moments, expansion
+
 
 ###########################################################################
 
