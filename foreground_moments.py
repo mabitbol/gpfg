@@ -51,18 +51,6 @@ def calculate_moment_expansion(args, expr, order, delete_first_moment=False):
 ###########################################################################
 
 
-def power_law_expansion(nmoments=0):
-    [amp, beta, x, x_0], expr = sym_power_law()
-    params = [amp, beta]
-    specfncs = [expr]
-    for k in range(nmoments):
-        specfncs_temp = []
-        specfncs_temp.append(specfncs[k].diff(amp))
-        specfncs_temp.append(specfncs[k].diff(beta))
-        specfncs += list(set(specfncs_temp))
-    moments = sym.symarray('w', len(specfncs)-1)
-    return params, moments, specfncs
-
 def eval_power_law(nu, amp_0=288., beta_0=-0.82, nu_0=100.e9):
     [amp, beta, x, x_0], expr = sym_power_law()
     expr = expr.subs([(amp, amp_0), (beta, beta_0), (x_0, nu_0)])
@@ -75,8 +63,6 @@ def eval_mbb(nu, amp_0=1.36e6, beta_0=1.53, temp_0=21.):
     eval_expr = sym.lambdify(x, expr, "numpy")
     return eval_expr(nu)
 
-
-## these work down here
 def eval_power_law_expansion(nmoments):
     x, moments, specfncs = power_law_expansion(nmoments)
     expansion = sym.Matrix(moments).dot(sym.Matrix(specfncs))
@@ -86,17 +72,13 @@ def eval_power_law_expansion(nmoments):
     params = list(expansion.free_symbols)
     params.remove(x)
     params = [x] + params
-    print(params)
-    print(sym.simplify(expansion))
     return sym.lambdify(params, expansion, "numpy")
-
 
 def power_law_expansion(nmoments=0):
     x, [amp, beta], expr = sym_power_law()
     specfncs = [expr/amp]
     for k in range(nmoments):
         specfncs.append(specfncs[k].diff(beta)) 
-    #specfncs = list(set(specfncs))
     moments = sym.symarray('w', len(specfncs))
     return x, moments, specfncs
 
