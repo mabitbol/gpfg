@@ -1,4 +1,8 @@
 import sympy as sym
+import numpy as np
+
+hplanck = 6.626068e-34
+kboltz = 1.3806503e-23
 
 def sym_power_law():
     x_0 = 100.e9
@@ -8,8 +12,6 @@ def sym_power_law():
     return x, [amp, beta], expr
 
 def sym_mbb():
-    hplanck = 6.626068e-34
-    kboltz = 1.3806503e-23
     x, amp, beta, invtemp = sym.symbols('x amp beta invtemp')
     X = hplanck * x * invtemp / kboltz
     expr = amp * sym.power.Pow(X, beta) * X**3 / (sym.exp(X) - 1. )
@@ -57,6 +59,20 @@ def moment_expansion(sym_function, order,
 # need to be able to grab individual moments / spectral functions
 # need to be able to mask individual moments
 
+def power_spectra_fgs(nu1, nu2, bs, bd, moments):
+    n1 = nu1 / 100.e9
+    n2 = nu2 / 100.e9
+    synch = (n1*n2)**bs * ( moments[0] + (np.log(n1) + np.log(n2)) * moments[1] + \
+             np.log(n1) * np.log(n2) * moments[2])
+    dust = (n1*n2)**bd * ( moments[3] + (np.log(n1) + np.log(n2)) * moments[4] + \
+             np.log(n1) * np.log(n2) * moments[5]) * bbX(nu1) * bbX(nu2)
+    mixed = (n1**bs * n2**bd * bbX(nu2) + n2**bs * n1**bd * bbX(nu1) ) * moments[6]
+    return synch + dust + mixed
+
+def bbX(nu, Td=20.):
+    x = hplanck * nu / (kboltz * Td)
+    return x**3 / (np.exp(x) - 1.)
+    
 
 ##################################################################################
 def calculate_moment_expansion_raw(args, expr, order):
